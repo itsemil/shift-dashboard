@@ -5,42 +5,176 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shift Manager - Task Submission</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; }
-        label { font-weight: bold; display: block; margin-top: 15px; }
-        input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-        button { margin-top: 20px; padding: 10px; width: 100%; background-color: #0056b3; color: white; border: none; font-size: 16px; cursor: pointer; }
-        button:hover { background-color: #004494; }
-        #message { margin-top: 15px; font-weight: bold; color: green; }
+        /* Modern CSS Variables for Light/Dark Mode */
+        :root {
+            --bg-color: #f4f7f6;
+            --surface-color: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --border-color: #d1d5db;
+            --primary-color: #0ea5e9;
+            --primary-hover: #0284c7;
+            --input-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --primary-color: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --input-bg: #2d3748;
+        }
+
+        /* Global Styles */
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* The Form Container */
+        .container {
+            background-color: var(--surface-color);
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Header & Toggle Button */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h2 { margin: 0; font-size: 24px; font-weight: 600; }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        
+        .theme-toggle:hover { transform: scale(1.1); }
+
+        /* Form Elements */
+        label { 
+            font-weight: 500; 
+            font-size: 14px;
+            display: block; 
+            margin-top: 15px; 
+            color: var(--text-muted);
+        }
+
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 6px; 
+            box-sizing: border-box; 
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        textarea { resize: vertical; }
+
+        /* Priority Colors in Dropdown */
+        option[value="1"] { color: #dc2626; font-weight: bold; }
+        option[value="2"] { color: #ea580c; font-weight: bold; }
+        option[value="3"] { color: #ca8a04; font-weight: bold; }
+        option[value="4"] { color: #6b7280; font-weight: bold; }
+
+        /* Submit Button */
+        .submit-btn { 
+            margin-top: 25px; 
+            padding: 14px; 
+            width: 100%; 
+            background-color: var(--primary-color); 
+            color: #ffffff; 
+            border: none; 
+            border-radius: 8px;
+            font-size: 16px; 
+            font-weight: 600;
+            cursor: pointer; 
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .submit-btn:hover { background-color: var(--primary-hover); }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        #message { 
+            margin-top: 15px; 
+            font-weight: 500; 
+            text-align: center;
+            font-size: 14px;
+            min-height: 20px;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Assign Shift Task</h2>
-    <form id="taskForm">
-        <label for="title">Task Title:</label>
-        <input type="text" id="title" required placeholder="e.g., Check pending cardboard shipments">
+    <div class="container">
+        <div class="header">
+            <h2>Assign Shift Task</h2>
+            <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">🌙</button>
+        </div>
 
-        <label for="description">Details:</label>
-        <textarea id="description" rows="4" required placeholder="What needs to be done?"></textarea>
+        <form id="taskForm">
+            <label for="title">Task Title</label>
+            <input type="text" id="title" required placeholder="e.g., Check pending shipments">
 
-        <label for="priority">Urgency Level:</label>
-        <select id="priority">
-            <option value="1">Priority 1: Critical - This Shift (Red)</option>
-            <option value="2">Priority 2: High - 24 Hours (Orange)</option>
-            <option value="3">Priority 3: Medium - End of Week (Yellow)</option>
-            <option value="4">Priority 4: Ongoing / Backlog (Grey)</option>
-        </select>
+            <label for="description">Details</label>
+            <textarea id="description" rows="4" required placeholder="What needs to be done?"></textarea>
 
-        <button type="submit">Submit to Dashboard</button>
-    </form>
-    <div id="message"></div>
+            <label for="priority">Urgency Level</label>
+            <select id="priority">
+                <option value="1">Priority 1: Critical - This Shift (Red)</option>
+                <option value="2">Priority 2: High - 24 Hours (Orange)</option>
+                <option value="3">Priority 3: Medium - End of Week (Yellow)</option>
+                <option value="4">Priority 4: Ongoing / Backlog (Grey)</option>
+            </select>
+
+            <button type="submit" class="submit-btn">Submit to Dashboard</button>
+        </form>
+        <div id="message"></div>
+    </div>
 
     <script type="module">
-        // Import functions from the Firebase CDN
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-        // TODO: Replace with your actual Firebase project config
+        // !!! PASTE YOUR FIREBASE CONFIG KEYS HERE !!!
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -50,20 +184,36 @@
             appId: "YOUR_APP_ID"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Handle form submission
+        // Dark Mode Logic
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.body.removeAttribute('data-theme');
+                themeToggle.innerText = '🌙';
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.innerText = '☀️';
+            }
+        });
+
+        // Form Submission Logic
         document.getElementById('taskForm').addEventListener('submit', async (e) => {
-            e.preventDefault(); // Prevent page refresh
+            e.preventDefault(); 
             
             const title = document.getElementById('title').value;
             const description = document.getElementById('description').value;
             const priority = Number(document.getElementById('priority').value);
+            const submitButton = document.querySelector('.submit-btn');
+            const messageDiv = document.getElementById('message');
+
+            submitButton.disabled = true;
+            submitButton.innerText = "Submitting...";
 
             try {
-                // Add a new document to the "shiftTasks" collection
                 await addDoc(collection(db, "shiftTasks"), {
                     title: title,
                     description: description,
@@ -72,16 +222,19 @@
                     createdAt: serverTimestamp()
                 });
 
-                document.getElementById('message').innerText = "Task successfully added to the dashboard!";
-                document.getElementById('taskForm').reset(); // Clear the form
+                messageDiv.innerText = "✓ Task successfully added to the dashboard!";
+                messageDiv.style.color = "#10b981"; // Modern green
+                document.getElementById('taskForm').reset(); 
 
-                // Hide success message after 3 seconds
-                setTimeout(() => { document.getElementById('message').innerText = ""; }, 3000);
+                setTimeout(() => { messageDiv.innerText = ""; }, 3000);
 
             } catch (error) {
                 console.error("Error adding document: ", error);
-                document.getElementById('message').innerText = "Error adding task. Check console.";
-                document.getElementById('message').style.color = "red";
+                messageDiv.innerText = "⚠ Error adding task. Check network.";
+                messageDiv.style.color = "#ef4444"; // Modern red
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerText = "Submit to Dashboard";
             }
         });
     </script>
