@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Shift Dashboard</title>
+    <style>
+        /* Shared Modern Theme */
+        :root {
+            --bg-color: #f4f7f6;
+            --surface-color: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --border-color: #d1d5db;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px; 
+            max-width: 800px;
+            margin: auto;
+            transition: all 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        h2 { margin: 0; font-size: 28px; }
+
+        .theme-toggle {
+            background: none; border: none; font-size: 24px; cursor: pointer;
+        }
+
+        /* Task Card Styles */
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .task-card {
+            background-color: var(--surface-color);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 8px solid gray; /* Default border */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Priority Colors for the cardboard factory floor */
+        .priority-1 { border-left-color: #ef4444; } /* Red - Critical */
+        .priority-2 { border-left-color: #f97316; } /* Orange - High */
+        .priority-3 { border-left-color: #eab308; } /* Yellow - Medium */
+        .priority-4 { border-left-color: #6b7280; } /* Grey - Low/Ongoing */
+
+        .task-info h3 { margin: 0 0 5px 0; font-size: 20px; }
+        .task-info p { margin: 0; color: var(--text-muted); font-size: 15px; white-space: pre-wrap;}
+        .task-meta { font-size: 12px; color: var(--text-muted); margin-top: 10px; font-weight: bold; }
+
+        .complete-btn {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .complete-btn:hover { background-color: #059669; }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 18px;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body data-theme="dark"> <div class="header">
+        <h2>Live Shift Priorities</h2>
+        <button class="theme-toggle" id="themeToggle" title="Toggle Theme">☀️</button>
+    </div>
+
+    <div id="taskList" class="task-list">
+        <div class="empty-state">Loading tasks...</div>
+    </div>
+
+    <script type="module">
+        // 1. Import Firebase tools (Using the correct browser CDN links)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+        // 2. Your exact Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlo8L-pJonyf367aHvxo_p3Y1nylFqUiY",
+            authDomain: "shift-dashboard-d3902.firebaseapp.com",
+            projectId: "shift-dashboard-d3902",
+            storageBucket: "shift-dashboard-d3902.firebasestorage.app",
+            messagingSenderId: "980925745632",
+            appId: "1:980925745632:web:bfc109ca22fac312ce8385"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const taskListEl = document.getElementById('taskList');
+
+        // Dark Mode Logic
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            if (document.body.getAttribute('data-theme') === 'dark') {
+                document.body.removeAttribute('data-theme');
+                themeToggle.innerText = '🌙';
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.innerText = '☀️';
+            }
+        });
+
+        // 3. Real-time Database Listener
+        // This queries the database and sorts by Priority (1 is top) then by newest
+        const q = query(collection(db, "shiftTasks"), orderBy("priority", "asc"), orderBy("createdAt", "desc"));
+
+        onSnapshot(q, (snapshot) => {
+            taskListEl.innerHTML = ''; // Clear the loading text
+
+            if (snapshot.empty) {
+                taskListEl.innerHTML = '<div class="empty-state">All caught up! No active tasks for this shift.</div>';
+                return;
+            }
+
+            snapshot.forEach((documentSnapshot) => {
+                const task = documentSnapshot.data();
+                const taskId = documentSnapshot.id;
+                
+                // Create the card layout
+                const card = document.createElement('div');
+                card.className = `task-card priority-${task.priority}`;
+
+                // Priority Label Logic
+                let priorityLabel = "";
+                if (task.priority === 1) priorityLabel = "CRITICAL (THIS SHIFT)";
+                if (task.priority === 2) priorityLabel = "HIGH (24 HOURS)";
+                if (task.priority === 3) priorityLabel = "MEDIUM (END OF WEEK)";
+                if (task.priority === 4) priorityLabel = "ONGOING";
+
+                card.innerHTML = `
+                    <div class="task-info">
+                        <h3>${task.title}</h3>
+                        <p>${task.description}</p>
+                        <div class="task-meta">${priorityLabel}</div>
+                    </div>
+                    <button class="complete-btn" data-id="${taskId}">Mark Done</button>
+                `;
+
+                taskListEl.appendChild(card);
+            });
+
+            // 4. Add click events to the "Mark Done" buttons
+            document.querySelectorAll('.complete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const idToDelete = e.target.getAttribute('data-id');
+                    if(confirm("Are you sure this task is complete? It will be removed from the board.")) {
+                        // Delete the document from Firebase
+                        await deleteDoc(doc(db, "shiftTasks", idToDelete));
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
